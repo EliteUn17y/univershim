@@ -63,7 +63,12 @@ for arg in "$@"; do
 done
 
 print_title "downloading factory tools"
-git clone https://chromium.googlesource.com/chromiumos/platform/factory data/factory
+
+if [ ! -d "data/factory" ]; then
+    git clone https://chromium.googlesource.com/chromiumos/platform/factory data/factory
+else
+    echo "factory tools already exist"
+fi
 
 print_title "creating universal shim"
 data/factory/setup/image_tool rma merge -i $bin_paths -o data/univershim_$joined.bin
