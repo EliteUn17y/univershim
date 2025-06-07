@@ -2,12 +2,14 @@
 
 . ./common.sh
 . ./image_utils.sh
+. ./rootfs_utils.sh
 
 print_help() {
   echo "Usage: ./build_universal.sh board_names"
   echo "Valid named arguments (specify with 'key=value'):"
   echo "  username     - Use a different username. This defaults to 'user'."
   echo "  password     - Use a different passsord. This defaults to 'user'."
+  echo "  password     - Use a different hostname. This defaults to 'univershim'."
   echo "  compress_img - Compress the final disk image into a zip file. Set this to any value to enable this option."
   echo "  rootfs_dir   - Use a different rootfs for the build. The directory you select will be copied before any patches are applied."
   echo "  quiet        - Don't use progress indicators which may clog up log files."
@@ -26,6 +28,7 @@ parse_args "$@"
 
 username="${args['username']-'user'}"
 password="${args['password']-'user'}"
+hostname="${args['hostname']-'univershim'}"
 compress_img="${args['compress_img']}"
 rootfs_dir="${args['rootfs_dir']}"
 quiet="${args['quiet']}"
@@ -57,7 +60,7 @@ done
 bin_paths="${bin_paths%% }"
 
 #build boards
-for arg in "$@"; do
+for arg in "${positional_args[@]}"; do
     echo "building board $arg"
     ./build_board.sh $arg
 done
@@ -108,12 +111,37 @@ if [ ! "$rootfs_dir" ]; then
 
   ./build_rootfs.sh $rootfs_dir $release \
     custom_packages=$desktop_package \
-    hostname=univershim \
+    hostname=$hostname \
     username=$username \
     user_passwd=$password \
     arch=$arch \
     distro=$distro
 fi
 
-print_title "patching $distro rootfs"
-retry_cmd ./patch_rootfs.sh $shim_bin $reco_bin $rootfs_dir "quiet=$quiet"
+make_directories
+
+for arg in "${positional_args[@]}"; do
+    echo "copying $arg firmware"
+
+    echo "mounting shim"
+    shim_loop=$(create_loop "data/shim_$arg.bin")
+    safe_mount "${shim_loop}p3" $shim_rootfs ro
+
+    echo "mounting recovery image"
+    reco_loop=$(create_loop "data/reco_$arg.bin")
+    safe_mount "${reco_loop}p3" $reco_rootfs ro
+
+    echo "copying modules to rootfs"
+    copy_modules $shim_rootfs $reco_rootfs $rootfs_dir
+
+    echo "unmounting and cleaning up"
+    umount $shim_rootfs
+    umount $reco_rootfs
+    losetup -d $shim_loop
+    losetup -d $reco_loop
+
+    echo "done"
+done
+
+echo "downloading misc firmware"
+copy_firmware $rootfs_dir
