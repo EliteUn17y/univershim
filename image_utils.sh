@@ -101,6 +101,7 @@ create_partitions() {
 populate_partitions() {
   local image_loop=$(realpath -m "${1}")
   local bootloader_dir=$(realpath -m "${2}")
+  local board_name="$3"
 
   #figure out if we are on a stable release
   local git_tag="$(git tag -l --contains HEAD)"
@@ -112,6 +113,8 @@ populate_partitions() {
   mkdir -p $stateful_mount/dev_image/etc/
   mkdir -p $stateful_mount/dev_image/factory/sh
   touch $stateful_mount/dev_image/etc/lsb-factory
+  mkdir -p $stateful_mount/cros_payloads
+  echo "[{\"board\": \"$board_name\", \"kernel\": 2, \"rootfs\": 3}]" > $stateful_mount/cros_payloads/rma_metadata.json
   umount $stateful_mount
 
   #mount and write to bootloader rootfs
@@ -121,6 +124,7 @@ populate_partitions() {
   if [ ! "$git_tag" ]; then #mark it as a dev version if needed
     printf "$git_hash" > "$bootloader_mount/opt/.shimboot_version_dev"
   fi
+  touch $bootloader_mount/etc/lsb-release
   umount "$bootloader_mount"
 }
 
