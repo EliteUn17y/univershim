@@ -52,7 +52,7 @@ partition_disk() {
     echo n
     echo #accept default parition number
     echo #accept default first sector
-    echo +0 #partition size is 32M
+    echo +0 #smallest possible size
     echo t #change partition type
     echo #accept default parition number
     echo FE3A2A5D-4F32-41A7-B725-ACCC3285A309 #chromeos kernel type
@@ -61,7 +61,7 @@ partition_disk() {
     echo n
     echo #accept default parition number
     echo #accept default first sector
-    echo +0 #set partition size
+    echo +0 #smallest possible size
     echo t #change partition type
     echo #accept default parition number
     echo 3CB8E202-3B7E-47DD-8A3C-7FF2A13CFCEC #chromeos rootfs type
