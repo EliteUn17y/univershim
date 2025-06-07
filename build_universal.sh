@@ -122,7 +122,7 @@ make_directories
 
 for arg in "${positional_args[@]}"; do
     echo "copying $arg firmware"
-    
+
     shim_rootfs="/tmp/shim_rootfs"
     reco_rootfs="/tmp/reco_rootfs"
 
@@ -135,7 +135,7 @@ for arg in "${positional_args[@]}"; do
     safe_mount "${reco_loop}p3" $reco_rootfs ro
 
     echo "copying modules to rootfs"
-    copy_modules $shim_rootfs $reco_rootfs $rootfs_dir
+    copy_modules $shim_rootfs $reco_rootfs "data/rootfs"
 
     echo "unmounting and cleaning up"
     umount $shim_rootfs
