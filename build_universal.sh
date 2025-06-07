@@ -46,12 +46,11 @@ done
 
 #get board names like board1_board2_board3
 joined=$(IFS=_; echo "${positional_args[*]}")
-echo $joined
 
 #get board bin paths like data/board1.bin data/board2.bin data/board3.bin
 bin_paths=""
 for board in "${positional_args[@]}"; do
-  bin_paths+="data/${board}.bin "
+  bin_paths+="data/shimboot_${board}.bin "
 done
 
 #trim trailing space
