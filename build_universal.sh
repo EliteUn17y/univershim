@@ -177,12 +177,12 @@ echo "creating linux partition"
 
 echo "formatting linux partition"
 #find last partition
-cnt=$( lsblk -ln -o NAME "$image_loop" \
-       | grep -E "^$(basename "$image_loop")p[0-9]+" \
-       | wc -l )
+LAST_PARTITION=$(
+  lsblk -lnpo NAME "$DEVICE" | grep "${DEVICE}p" | tail -n 1
+)
 
 #format last partiton on loop device
-mkfs.ext4 "${image_loop}p${cnt}"
+mkfs.ext4 "$LAST_PARTITION"
 
 echo "populating rootfs"
 
