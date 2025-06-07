@@ -5,17 +5,6 @@
 
 print_help() {
   echo "Usage: ./build_complete.sh board_name"
-  echo "Valid named arguments (specify with 'key=value'):"
-  echo "  compress_img - Compress the final disk image into a zip file. Set this to any value to enable this option."
-  echo "  rootfs_dir   - Use a different rootfs for the build. The directory you select will be copied before any patches are applied."
-  echo "  quiet        - Don't use progress indicators which may clog up log files."
-  echo "  desktop      - The desktop environment to install. This defaults to 'gnome'. Valid options include:"
-  echo "                   gnome, xfce, kde, lxde, gnome-flashback, cinnamon, mate, lxqt"
-  echo "  data_dir     - The working directory for the scripts. This defaults to ./data"
-  echo "  arch         - The CPU architecture to build the shimboot image for. Set this to 'arm64' if you have an ARM Chromebook."
-  echo "  release      - Set this to either 'bookworm', 'trixie', or 'unstable' to build for Debian 12, 13, or unstable."
-  echo "  distro       - The Linux distro to use. This should be either 'debian', 'ubuntu', or 'alpine'."
-  echo "  luks         - Set this argument to encrypt the rootfs partition."
 }
 
 assert_root
@@ -24,16 +13,6 @@ parse_args "$@"
 
 base_dir="$(realpath -m  $(dirname "$0"))"
 board="$1"
-
-compress_img="${args['compress_img']}"
-rootfs_dir="${args['rootfs_dir']}"
-quiet="${args['quiet']}"
-desktop="${args['desktop']-'gnome'}"
-data_dir="${args['data_dir']}"
-arch="${args['arch']-amd64}"
-release="${args['release']}"
-distro="${args['distro']-debian}"
-luks="${args['luks']}"
 
 #a list of all arm board names
 arm_boards="
