@@ -7,7 +7,7 @@
 print_help() {
   echo "Usage: ./build_rootfs.sh rootfs_path release_name"
   echo "Valid named arguments (specify with 'key=value'):"
-  echo "  custom_packages - The packages that will be installed in place of task-xfce-desktop."
+  echo "  custom_packages - The packages that will be installed in place of task-gnome-desktop."
   echo "  hostname        - The hostname for the new rootfs."
   echo "  enable_root     - Enable the root user."
   echo "  root_passwd     - The root password. This only has an effect if enable_root is set."
