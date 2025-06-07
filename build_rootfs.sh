@@ -26,7 +26,7 @@ parse_args "$@"
 
 rootfs_dir=$(realpath -m "${1}")
 release_name="${2}"
-packages="${args['custom_packages']-task-xfce-desktop}"
+packages="${args['custom_packages']-task-gnome-desktop}"
 arch="${args['arch']-amd64}"
 distro="${args['distro']-debian}"
 chroot_mounts="proc sys dev run"
