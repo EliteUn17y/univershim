@@ -74,7 +74,7 @@ else
 fi
 
 print_title "creating universal shim"
-data/factory/setup/image_tool rma merge -i $bin_paths -o data/univershim_$joined.bin
+data/factory/setup/image_tool rma merge -i $bin_paths -o data/univershim_$joined.bin -f
 
 print_title "building $distro rootfs"
 if [ ! "$rootfs_dir" ]; then
