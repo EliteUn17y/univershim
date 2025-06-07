@@ -19,7 +19,6 @@ make_bootable() {
 partition_disk() {
   local image_path=$(realpath -m "${1}")
   local bootloader_size="$2"
-  local rootfs_name="$3"
   #create partition table with fdisk
   ( 
     echo g #new gpt disk label
@@ -66,17 +65,6 @@ partition_disk() {
     echo #accept default parition number
     echo 3CB8E202-3B7E-47DD-8A3C-7FF2A13CFCEC #chromeos rootfs type
 
-    #create rootfs partition
-    echo n
-    echo #accept default parition number
-    echo #accept default first sector
-    echo #accept default size to fill rest of image
-    echo x #enter expert mode
-    echo n #change the partition name
-    echo #accept default partition number
-    echo "shimboot_rootfs:$rootfs_name" #set partition name
-    echo r #return to normal more
-
     #write changes
     echo w
   ) | fdisk $image_path > /dev/null
@@ -100,8 +88,6 @@ safe_mount() {
 create_partitions() {
   local image_loop=$(realpath -m "${1}")
   local kernel_path=$(realpath -m "${2}")
-  local is_luks="${3}"
-  local crypt_password="${4}"
 
   #create stateful
   mkfs.ext4 "${image_loop}p1"
@@ -110,22 +96,11 @@ create_partitions() {
   make_bootable $image_loop
   #create bootloader partition
   mkfs.ext2 "${image_loop}p3"
-  #create rootfs partition
-  if [ "$is_luks" ]; then
-    echo "$crypt_password" | cryptsetup luksFormat "${image_loop}p4"
-    echo "$crypt_password" | cryptsetup luksOpen "${image_loop}p4" rootfs
-    mkfs.ext4 /dev/mapper/rootfs
-  else 
-    mkfs.ext4 "${image_loop}p4"
-  fi
 }
 
 populate_partitions() {
   local image_loop=$(realpath -m "${1}")
   local bootloader_dir=$(realpath -m "${2}")
-  local rootfs_dir=$(realpath -m "${3}")
-  local quiet="$4"
-  local luks_enabled="$5"
 
   #figure out if we are on a stable release
   local git_tag="$(git tag -l --contains HEAD)"
@@ -147,37 +122,20 @@ populate_partitions() {
     printf "$git_hash" > "$bootloader_mount/opt/.shimboot_version_dev"
   fi
   umount "$bootloader_mount"
-
-  #write rootfs to image
-  local rootfs_mount=/tmp/new_rootfs
-  if [ "$luks_enabled" ]; then
-    safe_mount /dev/mapper/rootfs $rootfs_mount
-  else
-    safe_mount "${image_loop}p4" $rootfs_mount
-  fi
-
-  if [ "$quiet" ]; then
-    cp -ar $rootfs_dir/* $rootfs_mount
-  else
-    copy_progress $rootfs_dir $rootfs_mount
-  fi
-  umount $rootfs_mount
-  if [ "$luks_enabled" ]; then
-    cryptsetup close rootfs
-  fi
 }
 
 create_image() {
   local image_path=$(realpath -m "${1}")
   local bootloader_size="$2"
-  local rootfs_size="$3"
-  local rootfs_name="$4"
-  
-  #stateful + kernel + bootloader + rootfs
-  local total_size=$((1 + 32 + $bootloader_size + $rootfs_size))
+
+  #stateful + kernel + bootloader + kern_b + root_b
+  local base_size_mb=$((1 + 32 + bootloader_size))   #in MB
+  local base_size_bytes=$((base_size_mb * 1024 * 1024))
+  local total_size_bytes=$((base_size_bytes + 1024)) #add 1024 bytes
+
   rm -rf "${image_path}"
-  fallocate -l "${total_size}M" "${image_path}"
-  partition_disk $image_path $bootloader_size $rootfs_name
+  fallocate -l "${total_size_bytes}" "${image_path}"
+  partition_disk $image_path $bootloader_size
 }
 
 patch_initramfs() {
