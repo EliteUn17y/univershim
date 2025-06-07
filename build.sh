@@ -53,5 +53,5 @@ rm -rf "$initramfs_dir" "$kernel_img"
 
 print_info "cleaning up loop devices"
 losetup -d "$image_loop"
-losetup -d "$shim_path"
+losetup -d "$shim_loop"
 print_info "done"
