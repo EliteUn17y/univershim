@@ -10,7 +10,6 @@ print_help() {
   echo "  username     - Use a different username. This defaults to 'user'."
   echo "  password     - Use a different passsord. This defaults to 'user'."
   echo "  password     - Use a different hostname. This defaults to 'univershim'."
-  echo "  compress_img - Compress the final disk image into a zip file. Set this to any value to enable this option."
   echo "  rootfs_dir   - Use a different rootfs for the build. The directory you select will be copied before any patches are applied."
   echo "  quiet        - Don't use progress indicators which may clog up log files."
   echo "  desktop      - The desktop environment to install. This defaults to 'gnome'. Valid options include:"
@@ -19,7 +18,6 @@ print_help() {
   echo "  arch         - The CPU architecture to build the shimboot image for. Set this to 'arm64' if you have an ARM Chromebook."
   echo "  release      - Set this to either 'bookworm', 'trixie', or 'unstable' to build for Debian 12, 13, or unstable."
   echo "  distro       - The Linux distro to use. This should be either 'debian', 'ubuntu', or 'alpine'."
-  echo "  luks         - Set this argument to encrypt the rootfs partition."
 }
 
 assert_root
@@ -29,7 +27,6 @@ parse_args "$@"
 username="${args['username']-'user'}"
 password="${args['password']-'user'}"
 hostname="${args['hostname']-'univershim'}"
-compress_img="${args['compress_img']}"
 rootfs_dir="${args['rootfs_dir']}"
 quiet="${args['quiet']}"
 desktop="${args['desktop']-'gnome'}"
@@ -37,7 +34,6 @@ data_dir="${args['data_dir']}"
 arch="${args['arch']-amd64}"
 release="${args['release']}"
 distro="${args['distro']-debian}"
-luks="${args['luks']}"
 
 positional_args=()
 
@@ -49,6 +45,8 @@ done
 
 #get board names like board1_board2_board3
 joined=$(IFS=_; echo "${positional_args[*]}")
+
+image_path=data/univershim_$joined.bin
 
 #get board bin paths like data/board1.bin data/board2.bin data/board3.bin
 bin_paths=""
@@ -74,7 +72,7 @@ else
 fi
 
 print_title "creating universal shim"
-data/factory/setup/image_tool rma merge -i $bin_paths -o data/univershim_$joined.bin -f
+data/factory/setup/image_tool rma merge -i $bin_paths -o $image_path -f
 
 print_title "building $distro rootfs"
 if [ ! "$rootfs_dir" ]; then
@@ -151,3 +149,55 @@ done
 echo "downloading misc firmware"
 copy_firmware $rootfs
 extract_modules $rootfs
+
+echo "extending final image"
+rootfs_size="$(du -sm $rootfs_dir | cut -f 1)"
+rootfs_part_size="$(($rootfs_size * 12 / 10 + 5))"
+truncate -s +${rootfs_part_size}M $image_path
+
+echo "creating image loop device"
+image_loop="$(create_loop ${output_path})"
+
+echo "creating linux partition"
+( 
+    #create rootfs partition
+    echo n
+    echo #accept default parition number
+    echo #accept default first sector
+    echo #accept default size to fill rest of image
+    echo x #enter expert mode
+    echo n #change the partition name
+    echo #accept default partition number
+    echo "shimboot_rootfs:$distro" #set partition name
+    echo r #return to normal mode
+
+    #write changes
+    echo w
+) | fdisk $image_path > /dev/null
+
+echo "formatting linux partition"
+#find last partition
+cnt=$( lsblk -ln -o NAME "$image_loop" \
+       | grep -E "^$(basename "$image_loop")p[0-9]+" \
+       | wc -l )
+
+#format last partiton on loop device
+mkfs.ext4 "${image_loop}p${cnt}"
+
+echo "populating rootfs"
+
+#write rootfs to image
+local rootfs_mount=/tmp/new_rootfs
+safe_mount "${image_loop}p${cnt}" $rootfs_mount
+
+if [ "$quiet" ]; then
+    cp -ar $rootfs_dir/* $rootfs_mount
+else
+    copy_progress $rootfs_dir $rootfs_mount
+fi
+umount $rootfs_mount
+
+print_info "cleaning up loop devices"
+losetup -d "$image_loop"
+
+print_title "build complete! the final image is located at $(realpath $image_path)"
