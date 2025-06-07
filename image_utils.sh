@@ -100,22 +100,28 @@ create_partitions() {
 
 populate_partitions() {
   local image_loop=$(realpath -m "${1}")
-  local bootloader_dir=$(realpath -m "${2}")
-  local board_name="$3"
+  local shim_loop=$(realpath -m "${2}")
+  local bootloader_dir=$(realpath -m "${3}")
+  local board_name="$4"
 
   #figure out if we are on a stable release
   local git_tag="$(git tag -l --contains HEAD)"
   local git_hash="$(git rev-parse --short HEAD)"
 
   #mount and write empty file to stateful
-  local stateful_mount=/tmp/shim_stateful
-  safe_mount "${image_loop}p1" $stateful_mount
-  mkdir -p $stateful_mount/dev_image/etc/
-  mkdir -p $stateful_mount/dev_image/factory/sh
-  touch $stateful_mount/dev_image/etc/lsb-factory
-  mkdir -p $stateful_mount/cros_payloads
-  echo "[{\"board\": \"$board_name\", \"kernel\": 2, \"rootfs\": 3}]" > $stateful_mount/cros_payloads/rma_metadata.json
-  umount $stateful_mount
+  local image_stateful_mount=/tmp/image_stateful
+  local shim_stateful_mount=/tmp/shim_stateful
+  safe_mount "${image_loop}p1" $image_stateful_mount
+  safe_mount "${shim_loop}p1" $shim_stateful_mount
+  mkdir -p $image_stateful_mount/dev_image/etc/
+  mkdir -p $image_stateful_mount/dev_image/factory/sh
+  touch $image_stateful_mount/dev_image/etc/lsb-factory
+  mkdir -p $image_stateful_mount/cros_payloads
+  echo "[{\"board\": \"$board_name\", \"kernel\": 2, \"rootfs\": 3}]" > $image_stateful_mount/cros_payloads/rma_metadata.json
+  cp $shim_stateful_mount/cros_payloads/$board_name.json $image_stateful_mount/cros_payloads/$board_name.json
+  grep '.gz' $image_stateful_mount/cros_payloads/$board_name.json | sed -E 's/.*: *"([^"]+\.gz)".*/\1/' | tr -d ',' | xargs -I{} touch "$image_stateful_mount/cros_payloads/{}"
+  umount $image_stateful_mount
+  umount $shim_stateful_mount
 
   #mount and write to bootloader rootfs
   local bootloader_mount="/tmp/shim_bootloader"
