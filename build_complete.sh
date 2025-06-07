@@ -9,7 +9,7 @@ print_help() {
   echo "  compress_img - Compress the final disk image into a zip file. Set this to any value to enable this option."
   echo "  rootfs_dir   - Use a different rootfs for the build. The directory you select will be copied before any patches are applied."
   echo "  quiet        - Don't use progress indicators which may clog up log files."
-  echo "  desktop      - The desktop environment to install. This defaults to 'xfce'. Valid options include:"
+  echo "  desktop      - The desktop environment to install. This defaults to 'gnome'. Valid options include:"
   echo "                   gnome, xfce, kde, lxde, gnome-flashback, cinnamon, mate, lxqt"
   echo "  data_dir     - The working directory for the scripts. This defaults to ./data"
   echo "  arch         - The CPU architecture to build the shimboot image for. Set this to 'arm64' if you have an ARM Chromebook."
