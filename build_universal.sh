@@ -125,6 +125,7 @@ for arg in "${positional_args[@]}"; do
 
     shim_rootfs="/tmp/shim_rootfs"
     reco_rootfs="/tmp/reco_rootfs"
+    rootfs="data/rootfs"
 
     echo "mounting shim"
     shim_loop=$(create_loop "data/shim_$arg.bin")
@@ -135,7 +136,7 @@ for arg in "${positional_args[@]}"; do
     safe_mount "${reco_loop}p3" $reco_rootfs ro
 
     echo "copying modules to rootfs"
-    copy_modules $shim_rootfs $reco_rootfs "data/rootfs"
+    copy_modules $shim_rootfs $reco_rootfs $rootfs
 
     echo "unmounting and cleaning up"
     umount $shim_rootfs
