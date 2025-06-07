@@ -122,6 +122,9 @@ make_directories
 
 for arg in "${positional_args[@]}"; do
     echo "copying $arg firmware"
+    
+    shim_rootfs="/tmp/shim_rootfs"
+    reco_rootfs="/tmp/reco_rootfs"
 
     echo "mounting shim"
     shim_loop=$(create_loop "data/shim_$arg.bin")
