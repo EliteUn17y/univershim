@@ -128,8 +128,8 @@ create_image() {
   local image_path=$(realpath -m "${1}")
   local bootloader_size="$2"
 
-  #stateful + kernel + bootloader + kern_b + root_b
-  local base_size_mb=$((1 + 32 + bootloader_size))   #in MB
+  #first sector + stateful + kernel + bootloader + kern_b + root_b
+  local base_size_mb=$((2 + 1 + 32 + bootloader_size))   #in MB
   local base_size_bytes=$((base_size_mb * 1024 * 1024))
   local total_size_bytes=$((base_size_bytes + 1024)) #add 1024 bytes
 
