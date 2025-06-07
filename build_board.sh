@@ -215,51 +215,6 @@ if [ ! -f "$shim_bin" ]; then
   fi
 fi
 
-print_title "building $distro rootfs"
-if [ ! "$rootfs_dir" ]; then
-  desktop_package="task-$desktop-desktop"
-  rootfs_dir="$(realpath -m data/rootfs_$board)"
-  if [ "$(findmnt -T "$rootfs_dir/dev")" ]; then
-    sudo umount -l $rootfs_dir/* 2>/dev/null || true
-  fi
-  rm -rf $rootfs_dir
-  mkdir -p $rootfs_dir
-
-  if [ "$distro" = "debian" ]; then
-    release="${release:-bookworm}"
-  elif [ "$distro" = "ubuntu" ]; then
-    release="${release:-noble}"
-  elif [ "$distro" = "alpine" ]; then
-    release="${release:-edge}"
-  else
-    print_error "invalid distro selection"
-    exit 1
-  fi
-
-  #install a newer debootstrap version if needed
-  if [ -f "/etc/debian_version" ] && [ "$distro" = "ubuntu" -o "$distro" = "debian" ]; then
-    if [ ! -f "/usr/share/debootstrap/scripts/$release" ]; then
-      print_info "installing newer debootstrap version"
-      mirror_url="https://deb.debian.org/debian/pool/main/d/debootstrap/"
-      deb_file="$(curl "https://deb.debian.org/debian/pool/main/d/debootstrap/" | pcregrep -o1 'href="(debootstrap_.+?\.deb)"' | tail -n1)"
-      deb_url="${mirror_url}${deb_file}"
-      wget -q --show-progress "$deb_url" -O "/tmp/$deb_file"
-      apt-get install -y "/tmp/$deb_file"
-    fi
-  fi
-
-  ./build_rootfs.sh $rootfs_dir $release \
-    custom_packages=$desktop_package \
-    hostname=shimboot-$board \
-    username=user \
-    user_passwd=user \
-    arch=$arch \
-    distro=$distro
-fi
-
-print_title "patching $distro rootfs"
-retry_cmd ./patch_rootfs.sh $shim_bin $reco_bin $rootfs_dir "quiet=$quiet"
-
 print_title "building final disk image"
 final_image="$data_dir/shimboot_$board.bin"
 rm -rf $final_image
