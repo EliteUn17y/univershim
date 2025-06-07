@@ -120,12 +120,13 @@ fi
 
 make_directories
 
+rootfs="data/rootfs"
+
 for arg in "${positional_args[@]}"; do
     echo "copying $arg firmware"
 
     shim_rootfs="/tmp/shim_rootfs"
     reco_rootfs="/tmp/reco_rootfs"
-    rootfs="data/rootfs"
 
     echo "mounting shim"
     shim_loop=$(create_loop "data/shim_$arg.bin")
@@ -148,4 +149,5 @@ for arg in "${positional_args[@]}"; do
 done
 
 echo "downloading misc firmware"
-copy_firmware $rootfs_dir
+copy_firmware $rootfs
+extract_modules $rootfs
