@@ -187,8 +187,8 @@ mkfs.ext4 "$LAST_PARTITION"
 echo "populating rootfs"
 
 #write rootfs to image
-local rootfs_mount=/tmp/new_rootfs
-safe_mount "${image_loop}p${cnt}" $rootfs_mount
+rootfs_mount=/tmp/new_rootfs
+safe_mount "$LAST_PARTITION" $rootfs_mount
 
 if [ "$quiet" ]; then
     cp -ar $rootfs_dir/* $rootfs_mount
