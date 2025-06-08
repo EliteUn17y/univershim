@@ -155,9 +155,6 @@ rootfs_size="$(du -sm $rootfs_dir | cut -f 1)"
 rootfs_part_size="$(($rootfs_size * 12 / 10 + 5))"
 truncate -s +${rootfs_part_size}M $image_path
 
-echo "creating image loop device"
-image_loop="$(create_loop ${output_path})"
-
 echo "creating linux partition"
 ( 
     #create rootfs partition
@@ -175,10 +172,13 @@ echo "creating linux partition"
     echo w
 ) | fdisk $image_path > /dev/null
 
+echo "creating image loop device"
+image_loop="$(create_loop ${image_path})"
+
 echo "formatting linux partition"
 #find last partition
 LAST_PARTITION=$(
-  lsblk -lnpo NAME "$DEVICE" | grep "${DEVICE}p" | tail -n 1
+  lsblk -lnpo NAME "$image_path" | grep "${image_path}p" | tail -n 1
 )
 
 #format last partiton on loop device
