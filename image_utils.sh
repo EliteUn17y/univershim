@@ -27,7 +27,7 @@ partition_disk() {
     echo n #new partition
     echo #accept default parition number
     echo #accept default first sector
-    echo +1M #partition size is 1M
+    echo +16M #partition size is 1M
 
     #create 32MB kernel partition
     echo n
@@ -139,7 +139,7 @@ create_image() {
   local bootloader_size="$2"
 
   #first sector + stateful + kernel + bootloader + kern_b + root_b
-  local base_size_mb=$((2 + 1 + 32 + bootloader_size))   #in MB
+  local base_size_mb=$((2 + 16 + 32 + bootloader_size))   #in MB
   local base_size_bytes=$((base_size_mb * 1024 * 1024))
   local total_size_bytes=$((base_size_bytes + 1024)) #add 1024 bytes
 
