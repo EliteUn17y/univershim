@@ -13,21 +13,30 @@ make_directories() {
 }
 
 copy_modules() {
-  local shim_rootfs=$(realpath -m $1)
-  local reco_rootfs=$(realpath -m $2)
-  local target_rootfs=$(realpath -m $3)
+  local shim_rootfs=$(realpath -m "$1")
+  local reco_rootfs=$(realpath -m "$2")
+  local target_rootfs=$(realpath -m "$3")
 
-  for dir in "${shim_rootfs}/lib/modules/"*/; do
+  # Clean target modules first
+  rm -rf "${target_rootfs}/lib/modules"
+  mkdir -p "${target_rootfs}/lib/modules"
+
+  # Copy only versioned kernel module directories from shim_rootfs
+  for dir in "${shim_rootfs}/lib/modules/"[0-9]*; do
+    [ -d "$dir" ] || continue
     cp -r --remove-destination "$dir" "${target_rootfs}/lib/modules/"
   done
 
+  # Copy firmware
+  mkdir -p "${target_rootfs}/lib/firmware"
+  cp -r --remove-destination "${shim_rootfs}/lib/firmware/." "${target_rootfs}/lib/firmware/"
+  cp -r --remove-destination "${reco_rootfs}/lib/firmware/." "${target_rootfs}/lib/firmware/"
 
-  cp -r --remove-destination "${shim_rootfs}/lib/firmware/"* "${target_rootfs}/lib/firmware/"
-  cp -r --remove-destination "${reco_rootfs}/lib/firmware/"* "${target_rootfs}/lib/firmware/"
-
-  cp -r --remove-destination "${reco_rootfs}/lib/modprobe.d/"* "${target_rootfs}/lib/modprobe.d/"
-  cp -r --remove-destination "${reco_rootfs}/etc/modprobe.d/"* "${target_rootfs}/etc/modprobe.d/"
+  # Copy modprobe.d files
+  cp -r --remove-destination "${reco_rootfs}/lib/modprobe.d/." "${target_rootfs}/lib/modprobe.d/"
+  cp -r --remove-destination "${reco_rootfs}/etc/modprobe.d/." "${target_rootfs}/etc/modprobe.d/"
 }
+
 
 copy_firmware() {
   local firmware_path="/tmp/chromium-firmware"
