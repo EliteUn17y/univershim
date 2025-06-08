@@ -178,7 +178,7 @@ image_loop="$(create_loop ${image_path})"
 echo "formatting linux partition"
 #find last partition
 LAST_PARTITION=$(
-  lsblk -lnpo NAME "$image_path" | grep "${image_path}p" | tail -n 1
+  lsblk -lnpo NAME "$image_loop" | grep "${image_loop}p" | tail -n 1
 )
 
 #format last partiton on loop device
