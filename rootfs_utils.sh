@@ -17,7 +17,8 @@ copy_modules() {
   local reco_rootfs=$(realpath -m $2)
   local target_rootfs=$(realpath -m $3)
 
-  cp -r --remove-destination "${shim_rootfs}/lib/modules/"* "${target_rootfs}/lib/modules/"
+  cp -r --remove-destination "${shim_rootfs}/lib/modules/"*/ "${target_rootfs}/lib/modules/"
+
 
   cp -r --remove-destination "${shim_rootfs}/lib/firmware/"* "${target_rootfs}/lib/firmware/"
   cp -r --remove-destination "${reco_rootfs}/lib/firmware/"* "${target_rootfs}/lib/firmware/"
@@ -45,15 +46,23 @@ download_firmware() {
 }
 
 extract_modules() {
-  local target_rootfs=$(realpath -m $1)
+  local target_rootfs
+  target_rootfs=$(realpath -m "$1")
 
-  #decompress kernel modules if necessary - debian won't recognize these otherwise
-  local compressed_files="$(find "${target_rootfs}/lib/modules" -name '*.gz')"
-  if [ "$compressed_files" ]; then
+  # decompress modules if needed
+  local compressed_files
+  compressed_files=$(find "${target_rootfs}/lib/modules" -name '*.gz')
+  if [ -n "$compressed_files" ]; then
     echo "$compressed_files" | xargs gunzip
-    for kernel_dir in "$target_rootfs/lib/modules/"*; do
-      local version="$(basename "$kernel_dir")"
-      depmod -b "$target_rootfs" "$version"
-    done
   fi
+
+  # Only run depmod on real kernel version directories
+  for kernel_dir in "$target_rootfs/lib/modules/"*; do
+    if [ -d "$kernel_dir" ] && [[ "$(basename "$kernel_dir")" =~ ^[0-9]+\..* ]]; then
+      local version
+      version="$(basename "$kernel_dir")"
+      echo "Running depmod on version: $version"
+      depmod -b "$target_rootfs" "$version"
+    fi
+  done
 }
