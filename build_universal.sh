@@ -128,10 +128,12 @@ for arg in "${positional_args[@]}"; do
 
     echo "mounting shim"
     shim_loop=$(create_loop "data/shim_$arg.bin")
+    wait_for_partition "${shim_loop}p3" || exit 1
     safe_mount "${shim_loop}p3" $shim_rootfs ro
 
     echo "mounting recovery image"
     reco_loop=$(create_loop "data/reco_$arg.bin")
+    wait_for_partition "${reco_loop}p3" || exit 1
     safe_mount "${reco_loop}p3" $reco_rootfs ro
 
     echo "copying modules to rootfs"

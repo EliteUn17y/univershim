@@ -175,3 +175,18 @@ copy_progress() {
   mkdir -p "$destination"
   tar -cf - -C "${source}" . | pv -f -s $total_bytes | tar -xf - -C "${destination}"
 }
+
+wait_for_partition() {
+    local part="$1"
+    local timeout=10
+    while [ ! -e "$part" ] && [ $timeout -gt 0 ]; do
+        sleep 0.2
+        timeout=$((timeout - 1))
+    done
+    if [ ! -e "$part" ]; then
+        echo "Timeout waiting for $part to appear."
+        return 1
+    fi
+    return 0
+}
+
